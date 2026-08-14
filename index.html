@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="SCM inventory management dashboard" />
+    <title>SCM Control Room</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">OPERATIONS / INVENTORY</p>
+          <h1>SCM Control Room</h1>
+          <p class="subhead" data-i18n="subtitle">供應鏈庫存與採購風險監控</p>
+        </div>
+        <div class="header-actions">
+          <label class="language-select" for="languageSelect"><span data-i18n="language">語言</span><select id="languageSelect" aria-label="語言" data-i18n-aria="language"><option value="zh-Hant">中文</option><option value="en">English</option></select></label>
+          <button class="button button-quiet" id="downloadTemplateButton" type="button" data-i18n="downloadTemplate">下載 Excel 範本</button>
+          <label class="button button-primary" for="fileInput" data-i18n="importExcel">匯入 Excel</label>
+          <input id="fileInput" type="file" accept=".xlsx,.xls,.csv" hidden />
+          <button class="button button-dark" id="exportButton" type="button" data-i18n="exportData">匯出資料</button>
+        </div>
+      </header>
+
+      <section class="notice" id="notice" aria-live="polite" hidden></section>
+
+      <section class="metrics" aria-label="庫存摘要" data-i18n-aria="inventorySummary">
+        <article class="metric-card metric-stock">
+          <span data-i18n="managedItems">管理品項</span>
+          <strong id="itemCount">0</strong>
+          <small data-i18n="currentDataset">目前資料集</small>
+        </article>
+        <article class="metric-card metric-value">
+          <span data-i18n="inventoryValue">庫存價值</span>
+          <strong id="inventoryValue">NT$0</strong>
+          <small data-i18n="stockTimesPrice">現有庫存 x 單價</small>
+        </article>
+        <article class="metric-card metric-risk">
+          <span data-i18n="lowStockRisk">低庫存風險</span>
+          <strong id="riskCount">0</strong>
+          <small data-i18n="belowSafetyStock">低於安全庫存</small>
+        </article>
+        <article class="metric-card metric-supplier">
+          <span data-i18n="supplierCount">供應商數</span>
+          <strong id="supplierCount">0</strong>
+          <small data-i18n="activeSources">啟用供應來源</small>
+        </article>
+      </section>
+
+      <section class="workspace">
+        <aside class="panel filters-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">FILTERS</p>
+              <h2 data-i18n="filters">資料篩選</h2>
+            </div>
+            <button class="text-button" id="clearFiltersButton" type="button" data-i18n="clear">清除</button>
+          </div>
+          <label><span data-i18n="keyword">關鍵字</span><input id="searchInput" type="search" placeholder="料號、品名、供應商" data-i18n-placeholder="searchPlaceholder" /></label>
+          <label><span data-i18n="warehouse">倉庫</span><select id="warehouseFilter"><option value="" data-i18n="allWarehouses">全部倉庫</option></select></label>
+          <label><span data-i18n="status">狀態</span><select id="statusFilter"><option value="" data-i18n="allStatuses">全部狀態</option><option value="正常" data-i18n="normal">正常</option><option value="注意" data-i18n="watch">注意</option><option value="缺料" data-i18n="shortage">缺料</option></select></label>
+          <label class="check-row"><input id="riskOnlyFilter" type="checkbox" /><span data-i18n="riskOnly">僅顯示低庫存風險</span></label>
+          <div class="filter-note"><span></span><span data-i18n="riskNote">紅色標記代表庫存低於安全水位</span></div>
+        </aside>
+
+        <section class="panel data-panel">
+          <div class="panel-heading table-heading">
+            <div>
+              <p class="eyebrow">LIVE INVENTORY</p>
+              <h2 data-i18n="inventoryList">庫存清單</h2>
+            </div>
+            <button class="button button-quiet" id="addRecordButton" type="button" data-i18n="addItem">新增品項</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th data-i18n="partNumber">料號</th><th data-i18n="itemName">品名</th><th data-i18n="category">分類</th><th data-i18n="supplier">供應商</th><th data-i18n="warehouse">倉庫</th><th class="number" data-i18n="currentSafety">現有 / 安全</th><th class="number" data-i18n="unitPrice">單價</th><th data-i18n="status">狀態</th><th data-i18n="updatedDate">更新日期</th><th aria-label="操作" data-i18n-aria="actions"></th></tr></thead>
+              <tbody id="inventoryTableBody"></tbody>
+            </table>
+          </div>
+          <div class="empty-state" id="emptyState" hidden data-i18n="emptyState">尚無符合條件的資料。請匯入 Excel 或新增品項。</div>
+        </section>
+      </section>
+    </main>
+
+    <dialog id="recordDialog">
+      <form id="recordForm" method="dialog">
+        <div class="dialog-heading"><div><p class="eyebrow">INVENTORY RECORD</p><h2 id="dialogTitle">新增品項</h2></div><button class="icon-button" type="button" id="closeDialogButton" aria-label="關閉" data-i18n-aria="close">x</button></div>
+        <div class="form-grid">
+          <label><span data-i18n="partNumber">料號</span><input name="料號" required /></label><label><span data-i18n="itemName">品名</span><input name="品名" required /></label>
+          <label><span data-i18n="category">分類</span><input name="分類" required /></label><label><span data-i18n="supplier">供應商</span><input name="供應商" required /></label>
+          <label><span data-i18n="warehouse">倉庫</span><input name="倉庫" required /></label><label><span data-i18n="currentStock">現有庫存</span><input name="現有庫存" type="number" min="0" required /></label>
+          <label><span data-i18n="safetyStock">安全庫存</span><input name="安全庫存" type="number" min="0" required /></label><label><span data-i18n="unitPrice">單價</span><input name="單價" type="number" min="0" step="0.01" required /></label>
+          <label><span data-i18n="status">狀態</span><select name="狀態"><option value="正常" data-i18n="normal">正常</option><option value="注意" data-i18n="watch">注意</option><option value="缺料" data-i18n="shortage">缺料</option></select></label><label><span data-i18n="updatedDate">更新日期</span><input name="更新日期" type="date" required /></label>
+        </div>
+        <div class="dialog-actions"><button class="button button-quiet" type="button" id="cancelDialogButton" data-i18n="cancel">取消</button><button class="button button-primary" type="submit" data-i18n="save">儲存資料</button></div>
+      </form>
+    </dialog>
+    <script src="app.js"></script>
+  </body>
+</html>
