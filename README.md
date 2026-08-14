@@ -1,14 +1,14 @@
 # SCM Control Room
 
-一個不需要 Node.js 或資料庫的 SCM 庫存 dashboard。資料會存在該瀏覽器的 Local Storage，可匯入或匯出 Excel `.xlsx` 檔。
+一個不需要 Node.js 或資料庫的 SCM 問題追蹤 dashboard。資料會存在該瀏覽器的 Local Storage，可匯入或匯出 Excel `.xlsx` 檔。
 
 ## Excel 欄位
 
 第一列必須包含下列固定欄位：
 
-`料號`、`品名`、`分類`、`供應商`、`倉庫`、`現有庫存`、`安全庫存`、`單價`、`狀態`、`更新日期`
+`Cutomer`、`Date`、`Description`、`Module`、`SCM Owner`、`RD Owner`、`How to Handle by SCM Team`、`Lesson Learn`
 
-可用頁面上的「下載 Excel 範本」取得正確格式。匯入後，資料會覆蓋目前畫面中的資料集；匯出會輸出目前篩選後的資料。
+原始欄名的 `Cutomer` 拼字與 `Lesson Learn ` 末尾空格均可匯入；網站匯出時會使用標準化的 `Lesson Learn` 欄名。可用頁面上的「下載 Excel 範本」取得正確格式。匯入後，資料會覆蓋目前畫面中的資料集；匯出會輸出目前篩選後的資料。
 
 ## 在本機使用
 
